@@ -1,5 +1,7 @@
 # Force expected response
 
+Give vLLM an expected response, vllm-replayer will fully replay the response with 0 overhead. Useful for Agent / LLM traj replay to align the performance of serving engine.
+
 Make vLLM emit a fixed token sequence instead of sampling. Used for replay or prefix-cache alignment: the next request (e.g. same session) sees the exact assistant text you specified, so KV cache and continuations stay consistent.
 
 ## API

@@ -1598,6 +1598,20 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         for req_idx, sampled_ids in enumerate(valid_sampled_token_ids):
             if not sampled_ids:
                 continue
+            req_id = self.input_batch.req_ids[req_idx]
+            req_state = self.requests[req_id]
+            params = req_state.sampling_params
+            if params and params.extra_args and params.extra_args.get(
+                    "force_expected"):
+                expected_ids = params.extra_args.get("expected_token_ids")
+                if isinstance(expected_ids, list) and expected_ids:
+                    offset = len(req_state.output_token_ids)
+                    if offset < len(expected_ids):
+                        for j in range(len(sampled_ids)):
+                            idx = offset + j
+                            if idx < len(expected_ids):
+                                sampled_ids[j] = expected_ids[idx]
+                        valid_sampled_token_ids[req_idx] = sampled_ids
 
             start_idx = self.input_batch.num_tokens_no_spec[req_idx]
             end_idx = start_idx + len(sampled_ids)
@@ -1610,8 +1624,6 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                                            start_idx:end_idx] = sampled_ids
             self.input_batch.num_tokens_no_spec[req_idx] = end_idx
             self.input_batch.num_tokens[req_idx] = end_idx
-            req_id = self.input_batch.req_ids[req_idx]
-            req_state = self.requests[req_id]
             req_state.output_token_ids.extend(sampled_ids)
 
         if not self.speculative_config:

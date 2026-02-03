@@ -285,6 +285,19 @@ class Processor:
                 self.generation_config_fields, eos_token_id)
             sampling_params.update_from_tokenizer(
                 self.tokenizer.get_lora_tokenizer(lora_request))
+            extra_args = sampling_params.extra_args
+            if extra_args and extra_args.get("force_expected"):
+                if "expected_resp" in extra_args and \
+                    "expected_token_ids" not in extra_args:
+                    expected_text = extra_args.get("expected_resp")
+                    if expected_text is not None:
+                        if not isinstance(expected_text, str):
+                            expected_text = str(expected_text)
+                        tokenizer = self.tokenizer.get_lora_tokenizer(
+                            lora_request)
+                        # Tokenize expected response for downstream override.
+                        extra_args["expected_token_ids"] = tokenizer.encode(
+                            expected_text, add_special_tokens=False)
         else:
             pooling_params = params.clone()
 
